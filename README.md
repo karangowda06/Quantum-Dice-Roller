@@ -1,96 +1,22 @@
-#!/usr/bin/env python3
-"""
-quantum_dice.py
+🎲 Quantum Dice Roller — A Quantum Randomness Simulator
+The Quantum Dice Roller is a Python-based simulation that demonstrates how quantum superposition and measurement can be used to generate perfectly random outcomes — just like rolling a die, but with quantum principles.
+Instead of relying on classical pseudo-random algorithms, this project mimics how a quantum computer would prepare qubits in an equal superposition of states, measure them, and collapse the wavefunction to yield a random number. The result is a quantum-accurate dice roll simulated on classical hardware.
 
-Simulates a "quantum" dice roll by preparing an equal superposition
-over 2^k basis states (k = ceil(log2(num_sides))),
-measuring (uniform draw), and using rejection sampling to map
-the measurement to 1..num_sides fairly.
+🧠 Concept Overview
+In quantum mechanics, a qubit can exist in a superposition of |0⟩ and |1⟩ until it is measured, at which point it collapses to one of the states with a certain probability.
+This simulator extends that principle to multiple qubits to emulate a die with any number of sides:
 
-Dependencies: numpy; matplotlib (optional, for the histogram).
-"""
+Determine the minimum number of qubits required: k = ceil(log₂(N))
+Create a uniform superposition over all 2^k possible states
+Simulate measurement to obtain a random basis state
+Map that measurement outcome to a die face (1 to N) using rejection sampling to ensure fairness
+The process models what would happen if an actual quantum computer were used to generate a random outcome from a fair superposition.
 
-import argparse
-import numpy as np
-from collections import Counter
+⚙️ Features
+🎯 True quantum-style randomness (simulated using uniform probability over quantum states)
+🧩 Supports any N-sided die (2-sided coin up to large N)
+🧮 Efficient batch simulation using NumPy
 
-def quantum_dice_roll(num_sides=6):
-    """
-    Simulate one quantum dice roll for a die with `num_sides` sides (>=2).
-    Returns an integer in 1..num_sides.
-    """
-    if num_sides < 2:
-        raise ValueError("num_sides must be >= 2")
-    k = int(np.ceil(np.log2(num_sides)))   # number of qubits
-    dim = 1 << k                           # 2**k
-    while True:
-        measured = np.random.randint(0, dim)
-        if measured < num_sides:
-            return int(measured + 1)
-        # otherwise reject and try again
+📊 Visual output with histogram analysis (optional Matplotlib visualization)
 
-def quantum_dice_roll_batch(num_sides, n):
-    """
-    Generate n rolls efficiently using vectorized draws with rejections.
-    Returns a NumPy array of length n with values in 1..num_sides.
-    """
-    if n <= 0:
-        return np.array([], dtype=int)
-    k = int(np.ceil(np.log2(num_sides)))
-    dim = 1 << k
-    results = []
-    while len(results) < n:
-        remaining = n - len(results)
-        chunk = max(64, remaining * 2)  # heuristic chunk size
-        candidates = np.random.randint(0, dim, size=chunk)
-        valid = candidates[candidates < num_sides] + 1
-        results.extend(valid.tolist())
-    return np.array(results[:n], dtype=int)
-
-def demo(num_sides=6, trials=10000, show_hist=True):
-    """
-    Run `trials` simulated quantum dice rolls and print counts/frequencies.
-    Optionally display a histogram if matplotlib is available.
-    """
-    rolls = quantum_dice_roll_batch(num_sides, trials)
-    counts = Counter(rolls)
-    print(f"Quantum dice simulation — {trials} trials, {num_sides}-sided die")
-    for face in range(1, num_sides + 1):
-        c = counts.get(face, 0)
-        print(f"Face {face:2d}: {c:6d}  freq={c/trials:.6f}")
-
-    if show_hist:
-        try:
-            import matplotlib.pyplot as plt
-            faces = list(range(1, num_sides + 1))
-            freqs = [counts.get(f, 0) / trials for f in faces]
-            plt.figure(figsize=(8,4))
-            plt.bar(faces, freqs)
-            plt.xlabel("Face")
-            plt.ylabel("Frequency")
-            plt.title(f"{num_sides}-sided Quantum Dice — {trials} trials")
-            plt.xticks(faces)
-            plt.tight_layout()
-            plt.show()
-        except Exception:
-            print("(matplotlib not available — skipping histogram)")
-
-def parse_args():
-    p = argparse.ArgumentParser(description="Quantum-style dice roller simulator")
-    p.add_argument("-s", "--sides", type=int, default=6, help="Number of sides (>=2)")
-    p.add_argument("-n", "--trials", type=int, default=1, help="How many rolls to perform")
-    p.add_argument("--demo", action="store_true", help="Run demo (prints distribution after many trials)")
-    p.add_argument("--no-hist", action="store_true", help="Do not show histogram (even if matplotlib exists)")
-    return p.parse_args()
-
-if __name__ == "__main__":
-    args = parse_args()
-    if args.demo:
-        demo(num_sides=args.sides, trials=args.trials if args.trials>0 else 10000, show_hist=not args.no_hist)
-    else:
-        # single-run / batch-run mode: print results of the requested number of rolls
-        if args.trials == 1:
-            print(quantum_dice_roll(num_sides=args.sides))
-        else:
-            rolls = quantum_dice_roll_batch(args.sides, args.trials)
-            print(" ".join(map(str, rolls)))
+💡 Lightweight & educational — ideal for learning basic quantum concepts without needing a real quantum processor
